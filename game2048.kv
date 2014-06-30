@@ -134,10 +134,14 @@ BoxLayout:
                     ToggleButton:
                         id: play_but
                         pos_hint: {'center_x': .5, 'center_y': .5}
-                        text: 'Jogar'
+                        text: 'Vamos lah'
                         on_press: app.ai_play(play_but)
 
+
+
                     Label:
+
+
 
                     BoxLayout:
                         id: tempo_controls
@@ -194,6 +198,32 @@ BoxLayout:
 					BoxButton:
 						source: 'data/icon-achievements.png'
 						on_press: app.gs_show_achievements()
+
+
+			BoxLayout:
+				orientation: 'vertical'
+				spacing: '10dp'
+
+				BoxLayout:
+					orientation: 'vertical'
+					canvas.before:
+						Color:
+							rgb: 0xbb / 255., 0xad / 255., 0xa0 / 255.
+						BorderImage:
+							pos: self.pos
+							size: self.size
+							source: 'data/round.png'
+					Label:
+						text: 'TIME'
+						color: 0xee / 255., 0xe4 / 255., 0xda / 255., 1.
+						font_size: self.height / 1.5
+						size_hint_y: .5
+						bold: True
+					Label:
+						text: str(game.score)
+						font_size: self.height / 1.5
+						bold: True
+
 
 	AnchorLayout:
 		id: anchor

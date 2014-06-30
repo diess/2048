@@ -14,6 +14,10 @@ from kivy.core.window import Window
 from kivy.utils import platform
 from kivy.factory import Factory
 
+t0 = 0
+
+import time
+
 import numpy
 from kivy.properties import NumericProperty, OptionProperty, ObjectProperty
 
@@ -127,8 +131,8 @@ class ButtonBehavior(object):
 class Number(Widget):
     number = NumericProperty(2)
     scale = NumericProperty(.1)
-    colors = {
-        2: get_color_from_hex('#eee4da'),
+    colors = { #cores aplicadas no preenchimento de fundo para cada numero
+        2: get_color_from_hex('#C2E0C2'),
         4: get_color_from_hex('#ede0c8'),
         8: get_color_from_hex('#f2b179'),
         16: get_color_from_hex('#f59563'),
@@ -137,8 +141,8 @@ class Number(Widget):
         128: get_color_from_hex('#edcf72'),
         256: get_color_from_hex('#edcc61'),
         512: get_color_from_hex('#edc850'),
-        1024: get_color_from_hex('#edc53f'),
-        2048: get_color_from_hex('#edc22e'),
+        1024: get_color_from_hex('#8AB9FF'),
+        2048: get_color_from_hex('#336633'),
         4096: get_color_from_hex('#ed702e'),
         8192: get_color_from_hex('#ed4c2e')}
 
@@ -194,13 +198,13 @@ class Game2048(Widget):
             [None, None, None, None],
             [None, None, None, None]]
 
-        # bind keyboard
+        # bind keyboard, vinculando teclas pressionadas as acoes do jogo
         Window.bind(on_key_down=self.on_key_down)
         Window.on_keyboard = lambda *x: None
 
         self.restart()
 
-    def on_key_down(self, window, key, *args):
+    def on_key_down(self, window, key, *args): #funcao que identifica a atividade da tecla pressionada
         if key == 273:
             self.move_topdown(True)
         elif key == 274:
@@ -216,7 +220,7 @@ class Game2048(Widget):
             PythonActivity.mActivity.moveTaskToBack(True)
             return True
 
-    def rebuild_background(self):
+    def rebuild_background(self): #reconstruindo o fundo de tela
         self.canvas.before.clear()
         with self.canvas.before:
             Color(0xbb / 255., 0xad / 255., 0xa0 / 255.)
@@ -224,12 +228,11 @@ class Game2048(Widget):
             Color(0xcc / 255., 0xc0 / 255., 0xb3 / 255.)
             csize = self.cube_size, self.cube_size
             for ix, iy in self.iterate_pos():
-                BorderImage(pos=self.index_to_pos(ix, iy), size=csize,
-                            source='data/round.png')
+                BorderImage(pos=self.index_to_pos(ix, iy), size=csize, source='data/round.png')
 
     def reposition(self, *args):
         self.rebuild_background()
-        # calculate the size of a number
+        # calculate the size of a number, calcular o tamanho de um numero
         l = min(self.width, self.height)
         padding = (l / 4.) / 8.
         cube_size = (l - (padding * 5)) / 4.
@@ -240,7 +243,7 @@ class Game2048(Widget):
             number.size = cube_size, cube_size
             number.pos = self.index_to_pos(ix, iy)
 
-    def iterate(self):
+    def iterate(self): #iterar
         for ix, iy in self.iterate_pos():
             child = self.grid[ix][iy]
             if child:
@@ -300,18 +303,16 @@ class Game2048(Widget):
         moved = False
 
         for iy in range(4):
-            # get all the cube for the current line
+            # get all the cube for the current line, obter o cubo inteiro para linha atual
             cubes = []
             for ix in r:
                 cube = grid[ix][iy]
                 if cube:
                     cubes.append(cube)
 
-            # combine them
-            self.combine(cubes)
+            self.combine(cubes) # combine them
 
-            # update the grid
-            for ix in r:
+            for ix in r: # update the grid
                 cube = cubes.pop(0) if cubes else None
                 if grid[ix][iy] != cube:
                     moved = True
@@ -338,11 +339,9 @@ class Game2048(Widget):
                 if cube:
                     cubes.append(cube)
 
-            # combine them
-            self.combine(cubes)
+            self.combine(cubes) # combine them
 
-            # update the grid
-            for iy in r:
+            for iy in r: # update the grid
                 cube = cubes.pop(0) if cubes else None
                 if grid[ix][iy] != cube:
                     moved = True
@@ -372,11 +371,12 @@ class Game2048(Widget):
             index += 1
 
     def check_end(self):
-        # we still have empty space
+        # we still have empty space, nos ainda temos espaco vazio
         if any(self.iterate_empty()):
             return False
 
         # check if 2 numbers of the same type are near each others
+        # verificar se dois numeros do mesmo tipo estao proximos uns dos outros
         if self.have_available_moves():
             return False
 
@@ -504,7 +504,7 @@ class Game2048App(App):
     # **************************************************************************
     # Executa uma jogada
     def ai_move(self):
-        return self.ai_api.make_move()
+        return self.ai_api.make_move
         # import cProfile
         # cProfile.runctx('self.ai_api.make_move()', globals(), locals(), filename="profiling.txt")
         # return True
@@ -775,24 +775,30 @@ class Game2048AI:
     def __init__(self, game_app):
         self.game_app = game_app
 
-    def max_score_and_action(self, state, eval_func, levels_to_go):
+    def max_score_and_action(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return (eval_func(state), None)
         score_action = (float("-inf"), None)
         for action, next_state in state.actions_and_next_states():
-            next_score = self.min_score(next_state, eval_func, levels_to_go)
+            next_score = self.min_score(next_state, eval_func, levels_to_go, alfa, beta)
             score_action = max(score_action, (next_score, action))
+            if score_action[0] >= beta: # compara o primeiro termo, ou seja, apenas o score com o beta
+                return score_action
+            alfa = max(alfa, score_action[0])
         if score_action[0] == float("-inf"):  # no action available (it's an end game state)
             return (eval_func(state), None)
         return score_action
 
-    def min_score(self, state, eval_func, levels_to_go):
+    def min_score(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return eval_func(state)
         score = float("inf")
         for next_state in state.chance_states():
-            next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1)
+            next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1, alfa, beta)
             score = min(score, next_score)
+            if score <= alfa:
+                return score
+            beta = min(beta, score)
         return score
 
     def current_state(self):
@@ -808,25 +814,34 @@ class Game2048AI:
         elif action == Actions.left:
             self.game_app.move_leftright(False)
 
+    @property
     def make_move(self):
         state = self.current_state()
+        #print(state)
         empties = len(state.get_empty_positions())
-        depth = 0
-        if empties >= 10:
-            depth = 0
-        elif empties >= 4:
-            depth = 0
-        elif empties >= 2:
+        #print("vazios: ", empties)
+        depth = 0  # profundidade, define a profundidade de visitas na arvore
+        if empties >= 10: # entre 14 e 10 vazios
             depth = 1
-        else:
+        elif empties >= 4: # entre 9 e 4 vazios
             depth = 2
-        score, action = self.max_score_and_action(state, eval_sum_blocks, depth)
+        elif empties >= 2: # entre 3 e 2 vazios
+            depth = 3
+        else: # apenas 1 vazio
+            depth = 3
+
+        alfa = float("-inf")
+        beta = float("inf")
+        eval_state = eval_sum_blocks(state)
+        #print("valor estado ", eval_state)
+        score, action = self.max_score_and_action(state, eval_sum_blocks, depth, alfa, beta)
+        #print("score ", score,", action ", action)
+        #print("----")
         if not action:
             self.execute(Actions.up)  # just to make the game end
             return False
         self.execute(action)
         return True
-
 
 #**************************************************************************
 
@@ -835,8 +850,9 @@ def eval_highest_block(state):
 
 
 def eval_sum_blocks(state):
-    return sum([val for x, y, val in state])
-
+    eval_sum = sum([val**2 for x, y, val in state])
+    aux = 0
+    return eval_sum
 
 #**************************************************************************
 if __name__ == '__main__':
