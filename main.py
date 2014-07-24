@@ -14,9 +14,8 @@ from kivy.core.window import Window
 from kivy.utils import platform
 from kivy.factory import Factory
 
-t0 = 0
-
 import time
+
 
 import numpy
 from kivy.properties import NumericProperty, OptionProperty, ObjectProperty
@@ -189,6 +188,7 @@ class Game2048(Widget):
     cube_size = NumericProperty(10)
     cube_padding = NumericProperty(10)
     score = NumericProperty(0)
+    tempo_total = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super(Game2048, self).__init__()
@@ -410,6 +410,7 @@ class Game2048(Widget):
         self.ids.end_label.text = text
         Animation(opacity=1., d=.5).start(end)
         app.gs_score(self.score)
+        self.stop_timer()
 
     def restart(self):
         self.score = 0
@@ -424,11 +425,26 @@ class Game2048(Widget):
         Clock.schedule_once(self.spawn_number, .1)
         Clock.schedule_once(self.spawn_number, .1)
         self.ids.end.opacity = 0
+        self.stop_timer()
 
+    def start_timer(self):
+        self.t0 = time.clock()
+        self.tempo_total = 0
+        Clock.schedule_interval(self.timer, 1)
+
+    def timer(self, dt):
+        #atualiza label
+        self.tempo_total = int(time.clock() - self.t0)
+        print(self.tempo_total)
+        return True
+
+    def stop_timer(self):
+        Clock.unschedule(self.timer)
 
 class Game2048App(App):
     use_kivy_settings = False
     ai_api = None
+    tempo_total = 0
 
     def build_config(self, config):
         if platform == 'android':
@@ -509,6 +525,7 @@ class Game2048App(App):
         # cProfile.runctx('self.ai_api.make_move()', globals(), locals(), filename="profiling.txt")
         # return True
 
+
     # Comeca a jogar continuamente ou, se ja estiver jogando, para de jogar
     def ai_play(self, button):
         if button.state == 'down':
@@ -516,6 +533,7 @@ class Game2048App(App):
             self.ai_play_button = button
             Animation(opacity=1., d=.5).start(self.root.ids.tempo_controls)
             Clock.schedule_interval(self.ai_keep_playing, tempo)
+            self.root.ids.game.start_timer()
         else:
             self.ai_stop_playing()
 
@@ -789,6 +807,22 @@ class Game2048AI:
             return (eval_func(state), None)
         return score_action
 
+    # soma do vetor dividido pela média
+
+    '''
+    def min_score(self, state, eval_func, levels_to_go, alfa, beta):
+        if levels_to_go < 0:
+            return eval_func(state)
+        score = float("inf")
+        next_state = gerar_min_canto(state)
+        next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1, alfa, beta)
+        score = min(score, next_score)
+        if score <= alfa:
+            return score
+        beta = min(beta, score)
+        return score
+    '''
+
     def min_score(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return eval_func(state)
@@ -800,6 +834,7 @@ class Game2048AI:
                 return score
             beta = min(beta, score)
         return score
+
 
     def current_state(self):
         return State(self.game_app.grid)
@@ -824,19 +859,20 @@ class Game2048AI:
         if empties >= 10: # entre 14 e 10 vazios
             depth = 1
         elif empties >= 4: # entre 9 e 4 vazios
-            depth = 2
+            depth = 1
         elif empties >= 2: # entre 3 e 2 vazios
-            depth = 3
+            depth = 2
         else: # apenas 1 vazio
-            depth = 3
+            depth = 2
 
         alfa = float("-inf")
         beta = float("inf")
         eval_state = eval_sum_blocks(state)
         #print("valor estado ", eval_state)
-        score, action = self.max_score_and_action(state, eval_sum_blocks, depth, alfa, beta)
+        score, action = self.max_score_and_action(state, eval_jogar_canto, depth, alfa, beta)
         #print("score ", score,", action ", action)
         #print("----")
+
         if not action:
             self.execute(Actions.up)  # just to make the game end
             return False
@@ -853,6 +889,26 @@ def eval_sum_blocks(state):
     eval_sum = sum([val**2 for x, y, val in state])
     aux = 0
     return eval_sum
+
+def eval_jogar_canto(state):
+    score_total = 0
+    for x, y, val in state:
+        score_total += (x+1) * (y+1) * val
+    return score_total
+
+def gerar_min_canto(state):
+    #for decrescente de 3 a 0
+    for x in range(3,0,-1):
+        # pega o estado e analiza como se fosse uma matriz, ex (0,0)
+        if state.board[x][x] == 0:
+            state.board[x][x] = 2
+        elif x == 0:
+            return state
+        elif state.board[x-1][x] == 0:
+            state.board[x-1][x] = 2
+        elif state.board[x][x-1] == 0:
+            state.board[x][x-1] = 2
+    return state
 
 #**************************************************************************
 if __name__ == '__main__':
