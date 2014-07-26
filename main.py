@@ -17,9 +17,13 @@ from kivy.core.window import Window
 from kivy.utils import platform
 from kivy.factory import Factory
 
+import time
+
 
 platform = platform()
 app = None
+
+t0 = 0
 
 if platform == 'android':
     # Support for Google Play
@@ -397,6 +401,8 @@ class Game2048(Widget):
                     return True
 
     def end(self):
+        tempo_total = int(time.clock() - t0)
+        print(tempo_total)
         end = self.ids.end.__self__
         self.remove_widget(end)
         self.add_widget(end)
@@ -407,8 +413,11 @@ class Game2048(Widget):
         self.ids.end_label.text = text
         Animation(opacity=1., d=.5).start(end)
         app.gs_score(self.score)
+        tempo_total = int(time.clock() - t0)
+        print(tempo_total)
 
     def restart(self):
+        self.t0 = time.clock()
         self.score = 0
         for ix, iy, child in self.iterate():
             child.destroy()
@@ -421,6 +430,8 @@ class Game2048(Widget):
         Clock.schedule_once(self.spawn_number, .1)
         Clock.schedule_once(self.spawn_number, .1)
         self.ids.end.opacity = 0
+
+
 
 
 class Game2048App(App):
@@ -504,6 +515,7 @@ class Game2048App(App):
 
     # Comeca a jogar continuamente ou, se ja estiver jogando, para de jogar
     def ai_play(self, button):
+        t0 = time.clock()
         if button.state == 'down':
             button.text = 'Parar'
             self.ai_play_button = button
@@ -620,8 +632,8 @@ class Game2048AI:
     def choose_action(self, state):
         if not self.get_actions(state):
             return None
-        print(self.evaluate(eval_highest_block, state))
-        print(self.evaluate(eval_sum_blocks, state))
+        #print(self.evaluate(eval_highest_block, state))
+        #print(self.evaluate(eval_sum_blocks, state))
         action = choice(self.get_actions(state))
         return action
 
