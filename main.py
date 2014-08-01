@@ -435,7 +435,7 @@ class Game2048(Widget):
     def timer(self, dt):
         #atualiza label
         self.tempo_total = int(time.clock() - self.t0)
-        print(self.tempo_total)
+        #print(self.tempo_total)
         return True
 
     def stop_timer(self):
@@ -793,6 +793,31 @@ class Game2048AI:
     def __init__(self, game_app):
         self.game_app = game_app
 
+    '''
+    # Minimax tradicional
+
+    def max_score_and_action(self, state, eval_func, levels_to_go):
+        if levels_to_go < 0:
+            return (eval_func(state), None)
+        score_action = (float("-inf"), None)
+        for action, next_state in state.actions_and_next_states():
+            next_score = self.min_score(next_state, eval_func, levels_to_go)
+            score_action = max(score_action, (next_score, action))
+        if score_action[0] == float("-inf"): # no action available (it's an end game state)
+            return (eval_func(state), None)
+        return score_action
+
+    def min_score(self, state, eval_func, levels_to_go):
+        if levels_to_go < 0:
+            return eval_func(state)
+        score = float("inf")
+        for next_state in state.chance_states():
+            next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1)
+            score = min(score, next_score)
+        return score
+    '''
+
+
     def max_score_and_action(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return (eval_func(state), None)
@@ -809,7 +834,7 @@ class Game2048AI:
 
     # soma do vetor dividido pela média
 
-    '''
+
     def min_score(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return eval_func(state)
@@ -821,7 +846,10 @@ class Game2048AI:
             return score
         beta = min(beta, score)
         return score
+
+
     '''
+    # min com poda alfa-beta tradicional
 
     def min_score(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
@@ -834,7 +862,7 @@ class Game2048AI:
                 return score
             beta = min(beta, score)
         return score
-
+    '''
 
     def current_state(self):
         return State(self.game_app.grid)
@@ -857,19 +885,21 @@ class Game2048AI:
         #print("vazios: ", empties)
         depth = 0  # profundidade, define a profundidade de visitas na arvore
         if empties >= 10: # entre 14 e 10 vazios
-            depth = 1
+            depth = 5
         elif empties >= 4: # entre 9 e 4 vazios
-            depth = 1
+            depth = 5
         elif empties >= 2: # entre 3 e 2 vazios
-            depth = 2
+            depth = 5
         else: # apenas 1 vazio
-            depth = 2
+            depth = 5
 
         alfa = float("-inf")
         beta = float("inf")
         eval_state = eval_sum_blocks(state)
         #print("valor estado ", eval_state)
         score, action = self.max_score_and_action(state, eval_jogar_canto, depth, alfa, beta)
+        #score, action = self.max_score_and_action(state, eval_sum_blocks, depth, alfa, beta)
+        #score, action = self.max_score_and_action(state, eval_sum_blocks, depth)
         #print("score ", score,", action ", action)
         #print("----")
 
