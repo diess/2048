@@ -7,7 +7,7 @@ title = 2048 with Kivy
 package.name = kivy2048
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = com.meltingrocks
+package.domain = edu.unipampa
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -55,7 +55,7 @@ fullscreen = 0
 android.permissions = INTERNET
 
 # (int) Android API to use
-#android.api = 14
+android.api = 14
 
 # (int) Minimum API required (8 = Android 2.2 devices)
 android.minapi = 10
@@ -179,5 +179,8 @@ log_level = 1
 
 [app:android.meta_data]
 com.google.android.gms.version = @integer/google_play_services_version
-com.google.android.gms.games.APP_ID = @string/app_id
-com.google.android.gms.appstate.APP_ID = @string/app_id
+#com.google.android.gms.games.APP_ID = @string/app_id
+com.google.android.gms.games.APP_ID = app_id
+#com.google.android.gms.appstate.APP_ID = @string/app_id
+com.google.android.gms.appstate.APP_ID = app_id
+
