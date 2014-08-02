@@ -844,9 +844,9 @@ class Game2048AI:
         elif empties >= 4: # entre 9 e 4 vazios
             depth = 4
         elif empties >= 2: # entre 3 e 2 vazios
-            depth = 4
+            depth = 5
         else: # apenas 1 vazio
-            depth = 4
+            depth = 5
 
         alfa = float("-inf")
         beta = float("inf")
