@@ -840,13 +840,13 @@ class Game2048AI:
         #print("vazios: ", empties)
         depth = 0  # profundidade, define a profundidade de visitas na arvore
         if empties >= 10: # entre 14 e 10 vazios
-            depth = 5
+            depth = 4
         elif empties >= 4: # entre 9 e 4 vazios
-            depth = 5
+            depth = 4
         elif empties >= 2: # entre 3 e 2 vazios
-            depth = 5
+            depth = 4
         else: # apenas 1 vazio
-            depth = 5
+            depth = 4
 
         alfa = float("-inf")
         beta = float("inf")
