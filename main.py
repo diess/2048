@@ -131,7 +131,7 @@ class Number(Widget):
     number = NumericProperty(2)
     scale = NumericProperty(.1)
     colors = { #cores aplicadas no preenchimento de fundo para cada numero
-        2: get_color_from_hex('#C2E0C2'),
+        2: get_color_from_hex('#eee4da'),
         4: get_color_from_hex('#ede0c8'),
         8: get_color_from_hex('#f2b179'),
         16: get_color_from_hex('#f59563'),
@@ -140,8 +140,8 @@ class Number(Widget):
         128: get_color_from_hex('#edcf72'),
         256: get_color_from_hex('#edcc61'),
         512: get_color_from_hex('#edc850'),
-        1024: get_color_from_hex('#8AB9FF'),
-        2048: get_color_from_hex('#336633'),
+        1024: get_color_from_hex('#edc53f'),
+        2048: get_color_from_hex('#edc22e'),
         4096: get_color_from_hex('#ed702e'),
         8192: get_color_from_hex('#ed4c2e')}
 
@@ -793,31 +793,7 @@ class Game2048AI:
     def __init__(self, game_app):
         self.game_app = game_app
 
-    '''
-    # Minimax tradicional
-
-    def max_score_and_action(self, state, eval_func, levels_to_go):
-        if levels_to_go < 0:
-            return (eval_func(state), None)
-        score_action = (float("-inf"), None)
-        for action, next_state in state.actions_and_next_states():
-            next_score = self.min_score(next_state, eval_func, levels_to_go)
-            score_action = max(score_action, (next_score, action))
-        if score_action[0] == float("-inf"): # no action available (it's an end game state)
-            return (eval_func(state), None)
-        return score_action
-
-    def min_score(self, state, eval_func, levels_to_go):
-        if levels_to_go < 0:
-            return eval_func(state)
-        score = float("inf")
-        for next_state in state.chance_states():
-            next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1)
-            score = min(score, next_score)
-        return score
-    '''
-
-
+    # Minimax com poda alfa-beta, funcao avaliacao soma blocos ao quadrado
     def max_score_and_action(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return (eval_func(state), None)
@@ -832,25 +808,7 @@ class Game2048AI:
             return (eval_func(state), None)
         return score_action
 
-    # soma do vetor dividido pela média
-
-
-    def min_score(self, state, eval_func, levels_to_go, alfa, beta):
-        if levels_to_go < 0:
-            return eval_func(state)
-        score = float("inf")
-        next_state = gerar_min_canto(state)
-        next_score, next_action = self.max_score_and_action(next_state, eval_func, levels_to_go - 1, alfa, beta)
-        score = min(score, next_score)
-        if score <= alfa:
-            return score
-        beta = min(beta, score)
-        return score
-
-
-    '''
-    # min com poda alfa-beta tradicional
-
+    # min com poda alfa-beta, funcao avaliacao soma blocos ao quadrado
     def min_score(self, state, eval_func, levels_to_go, alfa, beta):
         if levels_to_go < 0:
             return eval_func(state)
@@ -862,7 +820,6 @@ class Game2048AI:
                 return score
             beta = min(beta, score)
         return score
-    '''
 
     def current_state(self):
         return State(self.game_app.grid)
@@ -880,28 +837,21 @@ class Game2048AI:
     @property
     def make_move(self):
         state = self.current_state()
-        #print(state)
         empties = len(state.get_empty_positions())
-        #print("vazios: ", empties)
         depth = 0  # profundidade, define a profundidade de visitas na arvore
         if empties >= 10: # entre 14 e 10 vazios
-            depth = 5
+            depth = 1
         elif empties >= 4: # entre 9 e 4 vazios
-            depth = 5
+            depth = 2
         elif empties >= 2: # entre 3 e 2 vazios
-            depth = 5
+            depth = 3
         else: # apenas 1 vazio
-            depth = 5
+            depth = 3
 
         alfa = float("-inf")
         beta = float("inf")
         eval_state = eval_sum_blocks(state)
-        #print("valor estado ", eval_state)
-        score, action = self.max_score_and_action(state, eval_jogar_canto, depth, alfa, beta)
-        #score, action = self.max_score_and_action(state, eval_sum_blocks, depth, alfa, beta)
-        #score, action = self.max_score_and_action(state, eval_sum_blocks, depth)
-        #print("score ", score,", action ", action)
-        #print("----")
+        score, action = self.max_score_and_action(state, eval_sum_blocks, depth, alfa, beta)
 
         if not action:
             self.execute(Actions.up)  # just to make the game end
@@ -919,26 +869,6 @@ def eval_sum_blocks(state):
     eval_sum = sum([val**2 for x, y, val in state])
     aux = 0
     return eval_sum
-
-def eval_jogar_canto(state):
-    score_total = 0
-    for x, y, val in state:
-        score_total += (x+1) * (y+1) * val
-    return score_total
-
-def gerar_min_canto(state):
-    #for decrescente de 3 a 0
-    for x in range(3,0,-1):
-        # pega o estado e analiza como se fosse uma matriz, ex (0,0)
-        if state.board[x][x] == 0:
-            state.board[x][x] = 2
-        elif x == 0:
-            return state
-        elif state.board[x-1][x] == 0:
-            state.board[x-1][x] = 2
-        elif state.board[x][x-1] == 0:
-            state.board[x][x-1] = 2
-    return state
 
 #**************************************************************************
 if __name__ == '__main__':
